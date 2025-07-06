@@ -1,0 +1,75 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Expense Tracker - Online</title>
+</head>
+<body>
+  <h1>Expense Tracker</h1>
+  <input type="month" id="monthKey" />
+  <button onclick="loadEntries()">Load</button>
+
+  <h2>Add Entry</h2>
+  <form onsubmit="submitEntry(event)">
+    <input type="date" id="date" required />
+    <select id="type">
+      <option value="advance">Advance</option>
+      <option value="payment">Payment</option>
+    </select>
+    <input type="text" id="particulars" placeholder="Particulars" required />
+    <input type="number" id="amount" placeholder="Amount" required />
+    <input type="text" id="remarks" placeholder="Remarks" />
+    <button type="submit">Add</button>
+  </form>
+
+  <h2>Entries</h2>
+  <ul id="entryList"></ul>
+
+  <script>
+    const API_URL = "http://127.0.0.1:8000"; // Change to your deployed URL later
+
+    async function loadEntries() {
+      const monthKey = document.getElementById('monthKey').value;
+      const res = await fetch(`${API_URL}/expenses/${monthKey}`);
+      const entries = await res.json();
+
+      const list = document.getElementById('entryList');
+      list.innerHTML = "";
+      entries.forEach(e => {
+        const li = document.createElement('li');
+        li.textContent = `${e.date} | ${e.type} | ${e.particulars} | ₹${e.amount} | ${e.remarks}`;
+        const del = document.createElement('button');
+        del.textContent = "Delete";
+        del.onclick = async () => {
+          await fetch(`${API_URL}/expenses/${monthKey}/${e.id}`, { method: "DELETE" });
+          loadEntries();
+        }
+        li.appendChild(del);
+        list.appendChild(li);
+      });
+    }
+
+    async function submitEntry(event) {
+      event.preventDefault();
+      const id = '_' + Math.random().toString(36).substr(2, 9);
+      const entry = {
+        id,
+        date: document.getElementById('date').value,
+        type: document.getElementById('type').value,
+        particulars: document.getElementById('particulars').value,
+        amount: parseFloat(document.getElementById('amount').value),
+        remarks: document.getElementById('remarks').value
+      };
+      const monthKey = document.getElementById('monthKey').value;
+      await fetch(`${API_URL}/expenses/${monthKey}`, {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry)
+      });
+      loadEntries();
+    }
+  </script>
+</body>
+</html>
